@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Livestock Disease Prediction - AI-Powered Cattle Health Monitoring</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@300;400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- White Header Bar -->
+    <header class="main-header">
+        <div class="header-container">
+            <div class="logo-section">
+                <i class="fas fa-stethoscope"></i>
+                <span class="logo-text" data-translate="logo">Livestock Disease Prediction</span>
+            </div>
+            <nav class="nav-menu">
+                <a href="#" class="nav-link active" data-translate="navHome">Home</a>
+                <a href="#detect" class="nav-link" data-translate="navDetect">Detect Disease</a>
+                <a href="#appointment" class="nav-link" data-translate="navAppointment">Book Appointment</a>
+                <a href="#doctors" class="nav-link" data-translate="navDoctors">Our Doctors</a>
+                <a href="#expert" class="nav-link" data-translate="navExpert">Ask Expert</a>
+            </nav>
+            <div class="header-actions">
+                <button class="lang-btn" id="languageSelectBtn">
+                    <i class="fas fa-globe"></i>
+                    <span id="langCode">EN</span>
+                    <div class="lang-dropdown" id="langDropdown">
+                        <div class="lang-option" data-lang="en">English</div>
+                        <div class="lang-option" data-lang="hi">हिंदी</div>
+                        <div class="lang-option" data-lang="mr">मराठी</div>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="hero-content">
+            <div class="ai-badge">
+                <i class="fas fa-shield-alt"></i>
+                <span data-translate="aiBadge">AI-Powered Veterinary Solution</span>
+            </div>
+            <h1 class="hero-title" data-translate="heroTitle">Livestock Disease Prediction Using AI & Machine Learning</h1>
+            <p class="hero-description" data-translate="heroDescription">Upload an image of your cow and get instant disease detection results with treatment recommendations powered by advanced AI technology.</p>
+            <div class="hero-buttons">
+                <button class="btn-primary" id="startDetectionBtn" data-translate="startDetection">
+                    Start Detection <i class="fas fa-arrow-right"></i>
+                </button>
+                <button class="btn-secondary" id="learnMoreBtn" data-translate="learnMore">Learn More</button>
+            </div>
+            <div class="hero-metrics">
+                <div class="metric-item">
+                    <div class="metric-value">95%</div>
+                    <div class="metric-label" data-translate="accuracy">Accuracy Rate</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-value">&lt;3s</div>
+                    <div class="metric-label" data-translate="detectionTime">Detection Time</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-value">24/7</div>
+                    <div class="metric-label" data-translate="available">Available</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+        <!-- Model Status Warning -->
+        {% if not model_status.available %}
+        <section class="warning-section">
+            <div class="card warning-card">
+                <h2><i class="fas fa-exclamation-triangle"></i> <span data-translate="modelWarning">Model Not Available</span></h2>
+                <p>{{ model_status.error or 'The AI model has not been trained yet.' }}</p>
+                <p><strong data-translate="modelWarningFix">To fix this:</strong> <span data-translate="modelWarningCommand">Run python train_model.py in your terminal to train the model first.</span></p>
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- Detection Section -->
+        <section class="detection-section" id="detect">
+            <div class="card">
+                <h2><i class="fas fa-upload"></i> <span data-translate="uploadTitle">Upload Cow Image</span></h2>
+                <div class="upload-area" id="uploadArea">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p data-translate="uploadText">Drag & drop your image here or click to browse</p>
+                    <p class="file-info" data-translate="fileInfo">Supports: JPG, PNG, JPEG (Max 16MB)</p>
+                    <input type="file" id="fileInput" accept="image/*" hidden>
+                    <input type="file" id="cameraInput" accept="image/*" capture="environment" hidden>
+                </div>
+                <div class="upload-buttons">
+                    <button class="btn-camera" id="cameraBtn">
+                        <i class="fas fa-camera"></i>
+                        <span data-translate="cameraBtn">USE-CAMERA</span>
+                    </button>
+                    <button class="btn-gallery" id="galleryBtn">
+                        <i class="fas fa-images"></i>
+                        <span data-translate="galleryBtn">USE-GALLERY</span>
+                    </button>
+                </div>
+                
+                <!-- Camera Preview Section -->
+                <div class="camera-preview" id="cameraPreview" style="display: none;">
+                    <div class="camera-container">
+                        <video id="cameraVideo" autoplay playsinline></video>
+                        <canvas id="cameraCanvas" style="display: none;"></canvas>
+                        <div class="camera-controls">
+                            <button class="btn-capture" id="captureBtn">
+                                <i class="fas fa-camera"></i>
+                                <span>Capture Photo</span>
+                            </button>
+                            <button class="btn-cancel" id="cancelCameraBtn">
+                                <i class="fas fa-times"></i>
+                                <span>Cancel</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="preview-container" id="previewContainer" style="display: none;">
+                    <img id="previewImage" src="" alt="Preview">
+                    <button class="btn-remove" id="removeImage"><i class="fas fa-times"></i></button>
+                </div>
+                <button class="btn-predict" id="predictBtn" disabled>
+                    <i class="fas fa-search"></i> <span data-translate="predictBtn">Predict Disease</span>
+                </button>
+                <button class="btn-clear" id="clearBtn" style="display: none; margin-top: 10px;">
+                    <i class="fas fa-trash"></i> <span data-translate="clearBtn">Clear Results</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Results Section -->
+        <section class="results-section" id="resultsSection" style="display: none;">
+            <div class="card">
+                <h2><i class="fas fa-clipboard-check"></i> <span data-translate="resultsTitle">Prediction Results</span></h2>
+                <div class="result-content">
+                    <div class="result-image">
+                        <img id="resultImage" src="" alt="Result">
+                    </div>
+                    <div class="result-details">
+                        <div class="prediction-badge" id="predictionBadge">
+                            <span class="disease-name" id="diseaseName"></span>
+                            <span class="confidence" id="confidence"></span>
+                        </div>
+                        <div class="severity-indicator" id="severityIndicator"></div>
+                        <p class="description" id="description"></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Doctor Suggestions Section -->
+        <section class="suggestions-section" id="suggestionsSection" style="display: none;">
+            <div class="card">
+                <h2><i class="fas fa-user-doctor"></i> <span data-translate="suggestionsTitle">Doctor's Recommendations</span></h2>
+                <div class="suggestions-list" id="suggestionsList"></div>
+            </div>
+        </section>
+
+        <!-- Ask Expert Section (Chatbot) -->
+        <section class="expert-section" id="expert">
+            <div class="card">
+                <h2><i class="fas fa-robot"></i> <span data-translate="chatbotTitle">Disease Information Chatbot</span></h2>
+                <div class="chatbot-container">
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="message bot-message">
+                            <i class="fas fa-robot"></i>
+                            <p data-translate="chatbotWelcome">Hello! I'm here to help you with information about cow diseases. Ask me about symptoms, prevention, or treatment.</p>
+                        </div>
+                    </div>
+                    <div class="chat-input-container">
+                        <input type="text" id="chatInput" data-translate-placeholder="chatbotPlaceholder" placeholder="Ask about cow diseases..." class="chat-input">
+                        <button class="btn-send" id="sendBtn">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Doctor Appointment Section -->
+        <section class="appointment-section" id="appointment">
+            <div class="card">
+                <h2><i class="fas fa-calendar-check"></i> <span data-translate="appointmentTitle">Book Doctor Appointment</span></h2>
+                <p class="section-description" data-translate="appointmentDescription">Schedule an appointment with our veterinary experts for professional consultation and treatment.</p>
+                <div class="prediction-required-notice" id="predictionRequiredNotice" style="display: block;">
+                    <div class="notice-card">
+                        <i class="fas fa-info-circle"></i>
+                        <p><strong>Note:</strong> Please perform disease prediction first before booking an appointment. The prediction data will be automatically included with your appointment booking.</p>
+                    </div>
+                </div>
+                
+                <form class="appointment-form" id="appointmentForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="patientName" data-translate="patientName">Patient Name (Cow ID)</label>
+                            <input type="text" id="patientName" name="patientName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="ownerName" data-translate="ownerName">Owner Name</label>
+                            <input type="text" id="ownerName" name="ownerName" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="phone" data-translate="phone">Phone Number</label>
+                            <input type="tel" id="phone" name="phone" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email" data-translate="email">Email Address</label>
+                            <input type="email" id="email" name="email">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="appointmentDate" data-translate="appointmentDate">Preferred Date</label>
+                            <input type="date" id="appointmentDate" name="appointmentDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="appointmentTime" data-translate="appointmentTime">Preferred Time</label>
+                            <select id="appointmentTime" name="appointmentTime" required>
+                                <option value="">Select Time</option>
+                                <option value="09:00">09:00 AM</option>
+                                <option value="10:00">10:00 AM</option>
+                                <option value="11:00">11:00 AM</option>
+                                <option value="12:00">12:00 PM</option>
+                                <option value="14:00">02:00 PM</option>
+                                <option value="15:00">03:00 PM</option>
+                                <option value="16:00">04:00 PM</option>
+                                <option value="17:00">05:00 PM</option>
+                            </select>
+                        </div>
+                    </div>
+<!-- 
+                    <div class="form-group">
+                        <label for="symptoms" data-translate="symptoms">Symptoms / Reason for Visit</label>
+                        <textarea id="symptoms" name="symptoms" rows="4" data-translate-placeholder="symptomsPlaceholder" placeholder="Describe the symptoms or reason for the appointment..."></textarea>
+                    </div> -->
+
+                    <div class="form-group">
+                        <label for="urgency" data-translate="urgencyLevel">Urgency Level</label>
+                        <select id="urgency" name="urgency" required>
+                            <option value="normal" data-translate="urgencyNormal">Normal</option>
+                            <option value="urgent" data-translate="urgencyUrgent">Urgent</option>
+                            <option value="emergency" data-translate="urgencyEmergency">Emergency</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="location" data-translate="location">Location</label>
+                        <input type="text" id="location" name="location" data-translate-placeholder="locationPlaceholder" placeholder="Enter your location/address">
+                    </div>
+
+                    <button type="submit" class="btn-submit-appointment">
+                        <i class="fas fa-calendar-plus"></i>
+                        <span data-translate="bookAppointment">Book Appointment</span>
+                    </button>
+                </form>
+
+                <div class="appointment-success" id="appointmentSuccess" style="display: none;">
+                    <div class="success-message">
+                        <i class="fas fa-check-circle"></i>
+                        <h3 data-translate="appointmentSuccessTitle">Appointment Booked Successfully!</h3>
+                        <p data-translate="appointmentSuccessMessage">Your appointment has been booked. We will contact you shortly to confirm the details.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Our Doctors Section -->
+        <section class="doctors-section" id="doctors">
+            <div class="card">
+                <h2><i class="fas fa-user-doctor"></i> Our Veterinary Doctors</h2>
+                <p class="section-description">Connect with our experienced veterinary professionals for expert consultation and treatment.</p>
+                <div class="doctors-grid">
+                    <div class="doctor-card" onclick="window.location.href='tel:+919876543210'">
+                        <div class="doctor-avatar">
+                            <i class="fas fa-user-md"></i>
+                        </div>
+                        <div class="doctor-info">
+                            <h3>Dr. Rajesh Kumar</h3>
+                            <div class="specialization">Senior Veterinarian</div>
+                            <div class="experience">15+ years experience</div>
+                        </div>
+                        <div class="doctor-contact">
+                            <i class="fas fa-phone"></i>
+                            <a href="tel:+919876543210" class="phone-link">+91 98765 43210</a>
+                        </div>
+                    </div>
+                    <div class="doctor-card" onclick="window.location.href='tel:+919876543211'">
+                        <div class="doctor-avatar">
+                            <i class="fas fa-user-md"></i>
+                        </div>
+                        <div class="doctor-info">
+                            <h3>Dr. Priya Sharma</h3>
+                            <div class="specialization">Livestock Specialist</div>
+                            <div class="experience">12+ years experience</div>
+                        </div>
+                        <div class="doctor-contact">
+                            <i class="fas fa-phone"></i>
+                            <a href="tel:+919876543211" class="phone-link">+91 98765 43211</a>
+                        </div>
+                    </div>
+                    <div class="doctor-card" onclick="window.location.href='tel:+919876543212'">
+                        <div class="doctor-avatar">
+                            <i class="fas fa-user-md"></i>
+                        </div>
+                        <div class="doctor-info">
+                            <h3>Dr. Amit Patel</h3>
+                            <div class="specialization">Disease Control Expert</div>
+                            <div class="experience">10+ years experience</div>
+                        </div>
+                        <div class="doctor-contact">
+                            <i class="fas fa-phone"></i>
+                            <a href="tel:+919876543212" class="phone-link">+91 98765 43212</a>
+                        </div>
+                    </div>
+                    <div class="doctor-card" onclick="window.location.href='tel:+919876543213'">
+                        <div class="doctor-avatar">
+                            <i class="fas fa-user-md"></i>
+                        </div>
+                        <div class="doctor-info">
+                            <h3>Dr. Sunita Verma</h3>
+                            <div class="specialization">Nutrition Specialist</div>
+                            <div class="experience">8+ years experience</div>
+                        </div>
+                        <div class="doctor-contact">
+                            <i class="fas fa-phone"></i>
+                            <a href="tel:+919876543213" class="phone-link">+91 98765 43213</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- New Detection Button Section -->
+        <section class="new-detection-section">
+            <div class="card">
+                <div class="detection-button-container">
+                    <button class="btn-new-detection" onclick="startNewDetection()">
+                        <i class="fas fa-camera"></i>
+                        <span>Take New Photo</span>
+                    </button>
+                    <p class="detection-description">Click here to capture a new image and detect cow diseases</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Learn More Modal -->
+    <div class="modal-overlay" id="learnMoreModal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-info-circle"></i> Cow Health Information</h2>
+                <button class="modal-close" id="closeModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="health-info-grid">
+                    <div class="health-card healthy">
+                        <div class="health-image">
+                            <img src="https://via.placeholder.com/300x200/22c55e/ffffff?text=Healthy+Cow" alt="Healthy Cow">
+                        </div>
+                        <div class="health-details">
+                            <h3>Healthy Cow</h3>
+                            <p>Your cow appears to be healthy! A healthy cow should have clear eyes, good appetite, normal body temperature, and no visible skin lesions.</p>
+                            <div class="health-tips">
+                                <h4>Maintenance Tips:</h4>
+                                <ul>
+                                    <li>Continue regular health monitoring</li>
+                                    <li>Maintain proper nutrition and hydration</li>
+                                    <li>Ensure clean living conditions</li>
+                                    <li>Schedule regular veterinary check-ups</li>
+                                    <li>Monitor for any changes in behavior or appearance</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="health-card diseased lumpy">
+                        <div class="health-image">
+                            <img src="https://via.placeholder.com/300x200/f59e0b/ffffff?text=Lumpy+Skin+Disease" alt="Lumpy Skin Disease">
+                        </div>
+                        <div class="health-details">
+                            <h3>Lumpy Skin Disease</h3>
+                            <p>Lumpy Skin Disease (LSD) is a viral disease affecting cattle. Symptoms include fever, skin nodules, loss of appetite, and reduced milk production.</p>
+                            <div class="health-tips">
+                                <h4>Prevention & Treatment:</h4>
+                                <ul>
+                                    <li>Isolate the affected animal immediately</li>
+                                    <li>Contact a veterinarian as soon as possible</li>
+                                    <li>Provide supportive care: clean water, nutritious feed</li>
+                                    <li>Monitor for fever, loss of appetite, and skin nodules</li>
+                                    <li>Implement strict biosecurity measures</li>
+                                    <li>Consider vaccination for other animals in the herd</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="health-card diseased foot-mouth">
+                        <div class="health-image">
+                            <img src="https://via.placeholder.com/300x200/dc2626/ffffff?text=Foot+and+Mouth+Disease" alt="Foot and Mouth Disease">
+                        </div>
+                        <div class="health-details">
+                            <h3>Foot and Mouth Disease</h3>
+                            <p>Foot and Mouth Disease (FMD) is a highly contagious viral disease. Symptoms include blisters on feet, mouth, and teats, lameness, fever, and reduced milk production.</p>
+                            <div class="health-tips">
+                                <h4>Prevention & Treatment:</h4>
+                                <ul>
+                                    <li>Immediately isolate the affected animal</li>
+                                    <li>Contact a veterinarian urgently</li>
+                                    <li>Report to veterinary authorities immediately</li>
+                                    <li>Implement strict quarantine measures</li>
+                                    <li>Disinfect all equipment, vehicles, and facilities</li>
+                                    <li>Restrict movement of animals and people</li>
+                                    <li>Provide soft, palatable feed and clean water</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+        <div class="spinner"></div>
+        <p data-translate="analyzing">Analyzing image...</p>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-container">
+
+        <!-- Project Info -->
+        <div class="footer-section">
+          <h3>🐄 Livestock Disease Prediction</h3>
+          <p>
+            AI-powered system using Machine Learning & AI Chatbot for accurate livestock disease detection and
+            veterinary consultation for farmers.
+          </p>
+        </div>
+
+        <!-- Quick Links -->
+        <div class="footer-section">
+          <h3>Quick Links</h3>
+          <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="#detect">Disease Detection</a></li>
+            <li><a href="#appointment">Book Appointment</a></li>
+            <li><a href="#chatbot">AI Chatbot</a></li>
+          </ul>
+        </div>
+
+        <!-- Contact Info -->
+        <div class="footer-section">
+          <h3>Contact</h3>
+          <p>📞 +91 98765 43210</p>
+          <p>📧 livestock.health@gmail.com</p>
+          <p>📍 Maharashtra, India</p>
+        </div>
+
+      </div>
+
+      <!-- Disclaimer -->
+      <div class="footer-disclaimer">
+        ⚠️ This system provides AI-based assistance and is not a replacement
+        for professional veterinary consultation.
+      </div>
+
+      <!-- Copyright -->
+      <div class="footer-bottom">
+        © 2026 Livestock Disease Prediction | Developed by <strong>codecrafft</strong>
+      </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='translations.js') }}"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
